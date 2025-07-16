@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIP Calculator (Fancy + Dark Mode)</title>
+<style>
+    :root {
+        --bg-color: #f0f2f5;
+        --text-color: #333;
+        --card-bg: #fff;
+        --btn-bg: #4CAF50;
+        --btn-text: white;
+    }
+    .dark {
+        --bg-color: #121212;
+        --text-color: #eee;
+        --card-bg: #1e1e1e;
+        --btn-bg: #03dac6;
+        --btn-text: black;
+    }
+    body {
+        background: var(--bg-color);
+        color: var(--text-color);
+        font-family: 'Segoe UI', Tahoma, sans-serif;
+        margin: 0; padding: 0;
+        transition: all 0.3s ease;
+    }
+    h1 { text-align: center; padding: 20px; }
+    .container { max-width: 500px; margin: auto; padding: 20px; }
+    .card {
+        background: var(--card-bg); 
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        margin-bottom: 20px;
+    }
+    .options { display: flex; flex-direction: column; gap: 10px; }
+    .option-btn {
+        background: var(--btn-bg); color: var(--btn-text);
+        padding: 12px; border: none; border-radius: 8px;
+        font-size: 16px; cursor: pointer; transition: 0.2s;
+    }
+    .option-btn:hover { transform: translateY(-2px); }
+    label { margin-top: 8px; display: block; }
+    input {
+        width: 100%; padding: 8px; margin: 5px 0 10px;
+        border-radius: 6px; border: 1px solid #ccc;
+    }
+    .calc-btn {
+        width: 100%; padding: 10px;
+        background: var(--btn-bg); color: var(--btn-text);
+        border: none; border-radius: 6px; cursor: pointer;
+        margin-top: 10px; font-size: 15px;
+    }
+    .back-btn { background: #f44336; color: white; margin-top: 10px; }
+    .result { margin-top: 15px; font-size: 14px; }
+    .explanation { font-size: 13px; color: #888; margin-top: 10px; }
+    .toggle-mode {
+        position: fixed; top: 10px; right: 10px;
+        background: var(--btn-bg); color: var(--btn-text);
+        border: none; padding: 6px 10px; border-radius: 5px;
+        cursor: pointer;
+    }
+</style>
+</head>
+<body>
+<button class="toggle-mode" onclick="toggleMode()">🌙</button>
+<h1>SIP Calculator</h1>
+<div class="container">
+
+    <!-- Homepage -->
+    <div id="home" class="card">
+        <h2 style="text-align:center;">Choose Calculator</h2>
+        <div class="options">
+            <button class="option-btn" onclick="showCalculator('monthly')">📅 Monthly SIP</button>
+            <button class="option-btn" onclick="showCalculator('stepup')">📈 Step-up SIP</button>
+            <button class="option-btn" onclick="showCalculator('lump')">💰 One-time Investment</button>
+        </div>
+    </div>
+
+    <!-- Monthly SIP -->
+    <div id="monthly" class="card" style="display:none;">
+        <h2>📅 Monthly SIP</h2>
+        <label>Monthly Investment:</label>
+        <input type="number" id="monthlyAmount">
+        <label>Annual Interest Rate (%):</label>
+        <input type="number" id="monthlyRate">
+        <label>Time (years):</label>
+        <input type="number" id="monthlyTime">
+        <button class="calc-btn" onclick="handleMonthlySIP()">Calculate</button>
+        <div id="monthlyResult" class="result"></div>
+        <div id="monthlyExplain" class="explanation"></div>
+        <button class="calc-btn back-btn" onclick="goBack()">⬅ Back</button>
+    </div>
+
+    <!-- Step-up SIP -->
+    <div id="stepup" class="card" style="display:none;">
+        <h2>📈 Step-up SIP</h2>
+        <label>Initial Monthly Investment:</label>
+        <input type="number" id="stepupAmount">
+        <label>Annual Interest Rate (%):</label>
+        <input type="number" id="stepupRate">
+        <label>Time (years):</label>
+        <input type="number" id="stepupTime">
+        <label>Step-up % per year:</label>
+        <input type="number" id="stepupPercent">
+        <button class="calc-btn" onclick="handleStepUpSIP()">Calculate</button>
+        <div id="stepupResult" class="result"></div>
+        <div id="stepupExplain" class="explanation"></div>
+        <button class="calc-btn back-btn" onclick="goBack()">⬅ Back</button>
+    </div>
+
+    <!-- Lump sum -->
+    <div id="lump" class="card" style="display:none;">
+        <h2>💰 One-time Investment</h2>
+        <label>Amount:</label>
+        <input type="number" id="lumpAmount">
+        <label>Annual Interest Rate (%):</label>
+        <input type="number" id="lumpRate">
+        <label>Time (years):</label>
+        <input type="number" id="lumpTime">
+        <button class="calc-btn" onclick="handleLumpSum()">Calculate</button>
+        <div id="lumpResult" class="result"></div>
+        <div id="lumpExplain" class="explanation"></div>
+        <button class="calc-btn back-btn" onclick="goBack()">⬅ Back</button>
+    </div>
+
+</div>
+<script>
+    function toggleMode() { document.body.classList.toggle('dark'); }
+
+    function showCalculator(id) {
+        document.getElementById('home').style.display='none';
+        ['monthly','stepup','lump'].forEach(x=>document.getElementById(x).style.display='none');
+        document.getElementById(id).style.display='block';
+    }
+    function goBack() {
+        ['monthly','stepup','lump'].forEach(x=>document.getElementById(x).style.display='none');
+        document.getElementById('home').style.display='block';
+    }
+
+    function calculateMonthlySIP(p, r, t) {
+        let mr = r/12/100; let n=t*12;
+        return p*((Math.pow(1+mr,n)-1)*(1+mr))/mr;
+    }
+    function calculateStepUpSIP(p, r, t, s) {
+        let mr = r/12/100, total=0, curr=p;
+        for(let y=0;y<t;y++) {
+            let mLeft=(t-y)*12;
+            total+=curr*((Math.pow(1+mr,mLeft)-1)*(1+mr))/mr;
+            curr+=curr*(s/100);
+        }
+        return total;
+    }
+    function calculateLumpSum(p, r, t) { return p*Math.pow(1+(r/100),t); }
+
+    function handleMonthlySIP() {
+        let p=parseFloat(document.getElementById('monthlyAmount').value);
+        let r=parseFloat(document.getElementById('monthlyRate').value);
+        let t=parseFloat(document.getElementById('monthlyTime').value);
+        if(isNaN(p)||isNaN(r)||isNaN(t)) return alert('Enter valid inputs');
+        let invested=p*12*t, maturity=calculateMonthlySIP(p,r,t), returns=maturity-invested;
+        document.getElementById('monthlyResult').innerHTML=`Invested: ₹${invested.toFixed(0)} | Returns: ₹${returns.toFixed(0)} | Total: ₹${maturity.toFixed(0)}`;
+        document.getElementById('monthlyExplain').innerText=
+            `You invested ₹${p} per month for ${t} years at ${r}% p.a. Total invested ₹${invested}. Maturity: ₹${maturity.toFixed(0)}.`;
+    }
+    function handleStepUpSIP() {
+        let p=parseFloat(document.getElementById('stepupAmount').value);
+        let r=parseFloat(document.getElementById('stepupRate').value);
+        let t=parseFloat(document.getElementById('stepupTime').value);
+        let s=parseFloat(document.getElementById('stepupPercent').value);
+        if(isNaN(p)||isNaN(r)||isNaN(t)||isNaN(s)) return alert('Enter valid inputs');
+        let invested=0,curr=p;
+        for(let y=0;y<t;y++){ invested+=curr*12; curr+=curr*(s/100); }
+        let maturity=calculateStepUpSIP(p,r,t,s), returns=maturity-invested;
+        document.getElementById('stepupResult').innerHTML=`Invested: ₹${invested.toFixed(0)} | Returns: ₹${returns.toFixed(0)} | Total: ₹${maturity.toFixed(0)}`;
+        document.getElementById('stepupExplain').innerText=
+            `Started with ₹${p}/month, step-up ${s}% yearly, ${t} years at ${r}% p.a. Total invested ₹${invested}. Maturity: ₹${maturity.toFixed(0)}.`;
+    }
+    function handleLumpSum() {
+        let p=parseFloat(document.getElementById('lumpAmount').value);
+        let r=parseFloat(document.getElementById('lumpRate').value);
+        let t=parseFloat(document.getElementById('lumpTime').value);
+        if(isNaN(p)||isNaN(r)||isNaN(t)) return alert('Enter valid inputs');
+        let maturity=calculateLumpSum(p,r,t), returns=maturity-p;
+        document.getElementById('lumpResult').innerHTML=`Invested: ₹${p.toFixed(0)} | Returns: ₹${returns.toFixed(0)} | Total: ₹${maturity.toFixed(0)}`;
+        document.getElementById('lumpExplain').innerText=
+            `One-time investment of ₹${p} for ${t} years at ${r}% p.a. Maturity: ₹${maturity.toFixed(0)}.`;
+    }
+</script>
+</body>
+</html>
